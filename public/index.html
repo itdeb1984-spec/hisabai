@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HisabAI Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f7fb;
+      color: #1f2937;
+    }
+
+    .sidebar {
+      position: fixed;
+      width: 240px;
+      height: 100vh;
+      overflow-y: auto; 
+      background: #111827;
+      color: white;
+      padding: 25px 18px;
+    }
+
+    .logo {
+      font-size: 27px;
+      font-weight: bold;
+      margin-bottom: 35px;
+      color: #4ade80;
+    }
+
+    .menu a {
+      display: block;
+      color: #d1d5db;
+      text-decoration: none;
+      padding: 13px;
+      margin-bottom: 7px;
+      border-radius: 8px;
+    }
+
+    .menu a:hover {
+      background: #1f2937;
+      color: white;
+    }
+
+    .main {
+      margin-left: 240px;
+      padding: 30px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .topbar h1 {
+      font-size: 28px;
+    }
+
+    .business {
+      background: white;
+      padding: 10px 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px #ddd;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 22px;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.08);
+    }
+
+    .card h3 {
+      color: #6b7280;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .card .number {
+      font-size: 27px;
+      font-weight: bold;
+    }
+
+    .section {
+      background: white;
+      margin-top: 25px;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.07);
+    }
+
+    .quick-buttons {
+      margin-top: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 8px;
+      background: #16a34a;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    button:hover {
+      background: #15803d;
+    }
+
+    @media(max-width:900px) {
+      .cards {
+        grid-template-columns: repeat(2,1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+  <div class="logo">📊 HisabAI</div>
+
+  <div class="menu">
+    <a href="/">🏠 Dashboard</a>
+    <a href="/products.html">📦 Products</a>
+    <a href="/sales.html">🛒 Sales</a>
+    <a href="/purchases.html">🛒 Purchases</a>
+   <a href="/customers.html">👥 Customers</a>
+    <a href="/suppliers.html">🏭 Suppliers</a>
+    <a href="/expenses.html">💰 Expenses</a>
+    <a href="/payments.html">💳 Payments</a>
+    <a href="/reports.html">📊 Reports</a>
+   <a href="/settings.html">⚙️ Settings</a>
+  </div>
+
+</div>
+
+<div class="main">
+
+  <div class="topbar">
+    <div>
+      <h1>Dashboard</h1>
+      <p>আপনার ব্যবসার আজকের হিসাব</p>
+    </div>
+
+    <div class="business">
+      🏪 HisabAI Demo Shop
+    </div>
+  </div>
+  <div class="cards">
+
+  <div class="card">
+    <h3>আজকের বিক্রয়</h3>
+    <div class="number" id="todaySales">৳ ০</div>
+</div>
+
+<div class="card">
+    <h3>আজকের ক্রয়</h3>
+    <div class="number" id="todayPurchases">৳ ০</div>
+</div>
+
+<div class="card">
+<h3>আজকের খরচ</h3>
+  <div class="number" id="todayExpenses">৳ ০</div>
+</div>
+
+    <div class="card">
+  <h3>আজকের লাভ</h3>
+  <div class="number" id="todayProfit">৳ ০</div>
+</div>
+
+  </div>
+
+  <div class="section">
+
+    <h2>দ্রুত কাজ</h2>
+
+   <div class="quick-buttons">
+    <button onclick="location.href='/sales.html'">+ নতুন বিক্রয়</button>
+    <button onclick="location.href='/products.html'">📦 পণ্য</button>
+    <button onclick="location.href='/customers.html'">👥 ক্রেতা ও বাকি</button>
+    <button onclick="location.href='/sales-history.html'">📊 বিক্রয় ইতিহাস</button>
+    <button onclick="location.href='/due-history.html'">💰 বাকি আদায়ের ইতিহাস</button>
+</div>
+
+  </div>
+
+  <div class="section">
+    <h2>🤖 HisabAI Assistant</h2>
+    <p style="margin-top:12px;">
+      আপনার ব্যবসার হিসাব, বিক্রয়, লাভ-ক্ষতি ও স্টক বিশ্লেষণ করার জন্য AI Assistant।
+    </p>
+  </div>
+
+</div>
+
+<script>
+async function loadDashboard() {
+  try {
+    const response = await fetch('/api/sales-history');
+    const result = await response.json();
+
+    if (!result.success) return;
+
+    const sales = result.data || [];
+
+    const today = new Date();
+    const todaySales = sales
+      .filter(sale => {
+        const d = new Date(sale.sale_date);
+        return d.getFullYear() === today.getFullYear() &&
+               d.getMonth() === today.getMonth() &&
+               d.getDate() === today.getDate();
+      })
+      .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+
+    document.getElementById("todaySales").textContent =
+      "৳ " + todaySales.toFixed(2);
+const purchaseResponse = await fetch("/api/purchases");
+const purchaseResult = await purchaseResponse.json();
+
+let todayPurchases = 0;
+if (purchaseResult.success) {
+    const purchases = purchaseResult.data || [];
+
+    todayPurchases = purchases
+        .filter(purchase => {
+            const d = new Date(purchase.purchase_date);
+            return d.getFullYear() === today.getFullYear() &&
+                   d.getMonth() === today.getMonth() &&
+                   d.getDate() === today.getDate();
+        })
+        .reduce((sum, purchase) =>
+            sum + Number(purchase.total_amount || 0), 0);
+
+    document.getElementById("todayPurchases").textContent =
+        "৳ " + todayPurchases.toFixed(2);
+}
+ const expenseResponse = await fetch("/api/expenses");
+const expenseResult = await expenseResponse.json();
+
+let todayExpenses = 0;
+
+if (expenseResult.success) {
+  const expenses = expenseResult.data || [];
+
+  todayExpenses = expenses
+    .filter(expense => {
+      const d = new Date(expense.expense_date);
+      return d.getFullYear() === today.getFullYear() &&
+             d.getMonth() === today.getMonth() &&
+             d.getDate() === today.getDate();
+    })
+    .reduce((sum, expense) =>
+      sum + Number(expense.amount || 0), 0);
+
+  document.getElementById("todayExpenses").textContent =
+    "৳ " + todayExpenses.toFixed(2);
+}
+
+const todayProfit =
+  todaySales - todayPurchases - todayExpenses;
+
+document.getElementById("todayProfit").textContent =
+  "৳ " + todayProfit.toFixed(2); } catch (error) {
+    console.error("Dashboard error:", error);
+  }
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

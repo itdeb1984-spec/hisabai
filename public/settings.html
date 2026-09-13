@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HisabAI - Settings</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#f4f7fb;
+  color:#1f2937;
+}
+
+.header{
+  background:#111827;
+  color:white;
+  padding:20px 30px;
+}
+
+.header h2{
+  color:#4ade80;
+}
+
+.container{
+  max-width:900px;
+  margin:30px auto;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:25px;
+  border-radius:12px;
+  margin-bottom:25px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px;
+}
+
+label{
+  display:block;
+  margin-bottom:6px;
+  font-weight:bold;
+}
+
+input, select, textarea{
+  width:100%;
+  padding:11px;
+  border:1px solid #d1d5db;
+  border-radius:7px;
+}
+
+textarea{
+  min-height:90px;
+  resize:vertical;
+}
+
+button{
+  background:#2563eb;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:7px;
+  cursor:pointer;
+  margin-top:20px;
+}
+
+.back{
+  background:#374151;
+  margin-left:8px;
+}
+
+.message{
+  margin-top:15px;
+  font-weight:bold;
+}
+
+@media(max-width:700px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>⚙️ HisabAI</h2>
+  <p>Business Settings</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <h2>🏪 ব্যবসার তথ্য</h2>
+
+    <div class="form-grid">
+
+      <div>
+        <label>ব্যবসার নাম</label>
+        <input type="text" id="businessName" placeholder="ব্যবসার নাম লিখুন">
+      </div>
+
+      <div>
+        <label>মোবাইল নম্বর</label>
+        <input type="text" id="businessPhone" placeholder="01XXXXXXXXX">
+      </div>
+
+      <div>
+        <label>ইমেইল</label>
+        <input type="email" id="businessEmail" placeholder="example@email.com">
+      </div>
+
+      <div>
+        <label>মুদ্রা</label>
+        <select id="currency">
+          <option value="BDT">BDT - ৳</option>
+        </select>
+      </div>
+
+      <div style="grid-column:1/-1;">
+        <label>ঠিকানা</label>
+        <textarea id="businessAddress" placeholder="ব্যবসার ঠিকানা লিখুন"></textarea>
+      </div>
+
+    </div>
+
+    <button onclick="saveSettings()">💾 Settings Save করুন</button>
+    <button class="back" onclick="location.href='/'">← Dashboard</button>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <div class="card">
+    <h2>ℹ️ অ্যাপ তথ্য</h2>
+    <p style="margin-top:12px;">App Name: <strong>HisabAI</strong></p>
+    <p style="margin-top:8px;">Version: <strong>1.0 MVP</strong></p>
+    <p style="margin-top:8px;">Status: <strong>Running</strong></p>
+  </div>
+
+</div>
+
+<script>
+
+function loadSettings(){
+
+  document.getElementById("businessName").value =
+    localStorage.getItem("hisabai_business_name") || "HisabAI Demo Shop";
+
+  document.getElementById("businessPhone").value =
+    localStorage.getItem("hisabai_business_phone") || "";
+
+  document.getElementById("businessEmail").value =
+    localStorage.getItem("hisabai_business_email") || "";
+
+  document.getElementById("businessAddress").value =
+    localStorage.getItem("hisabai_business_address") || "";
+
+  document.getElementById("currency").value =
+    localStorage.getItem("hisabai_currency") || "BDT";
+}
+
+
+function saveSettings(){
+
+  const businessName =
+    document.getElementById("businessName").value.trim();
+
+  const businessPhone =
+    document.getElementById("businessPhone").value.trim();
+
+  const businessEmail =
+    document.getElementById("businessEmail").value.trim();
+
+  const businessAddress =
+    document.getElementById("businessAddress").value.trim();
+
+  const currency =
+    document.getElementById("currency").value;
+
+  if(!businessName){
+    document.getElementById("message").textContent =
+      "❌ ব্যবসার নাম লিখুন";
+    return;
+  }
+
+  localStorage.setItem("hisabai_business_name", businessName);
+  localStorage.setItem("hisabai_business_phone", businessPhone);
+  localStorage.setItem("hisabai_business_email", businessEmail);
+  localStorage.setItem("hisabai_business_address", businessAddress);
+  localStorage.setItem("hisabai_currency", currency);
+
+  document.getElementById("message").textContent =
+    "✅ Settings সফলভাবে সংরক্ষণ হয়েছে";
+}
+
+loadSettings();
+
+</script>
+
+</body>
+</html>

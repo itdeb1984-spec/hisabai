@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>বাকি আদায়ের ইতিহাস - HisabAI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 18px;
+      background: #059669;
+      color: white;
+      text-decoration: none;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .card-title {
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    .table-box {
+      background: white;
+      border-radius: 10px;
+      overflow-x: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+
+    th {
+      background: #059669;
+      color: white;
+      padding: 13px;
+      text-align: left;
+    }
+
+    td {
+      padding: 13px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 30px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 15px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="topbar">
+    <h1>💰 বাকি আদায়ের ইতিহাস</h1>
+
+    <div class="buttons">
+      <a class="btn" href="/customers.html">👥 ক্রেতা ও বাকি</a>
+      <a class="btn" href="/">🏠 হোম</a>
+    </div>
+  </div>
+
+  <div class="summary">
+
+    <div class="card">
+      <div class="card-title">মোট আদায়</div>
+      <div class="card-value" id="totalCollected">৳ 0.00</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">মোট লেনদেন</div>
+      <div class="card-value" id="totalTransactions">0</div>
+    </div>
+
+  </div>
+
+  <div class="table-box">
+
+    <table>
+      <thead>
+        <tr>
+          <th>তারিখ</th>
+          <th>ক্রেতা</th>
+          <th>মোবাইল</th>
+          <th>আদায়ের পরিমাণ</th>
+        </tr>
+      </thead>
+
+      <tbody id="historyList">
+        <tr>
+          <td colspan="4" class="empty">লোড হচ্ছে...</td>
+        </tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+<script>
+
+async function loadDueHistory() {
+
+  const historyList = document.getElementById("historyList");
+
+  try {
+
+    const response = await fetch("/api/due-payments");
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "তথ্য লোড করা যায়নি");
+    }
+
+    const payments = result.data || [];
+
+    let total = 0;
+
+    historyList.innerHTML = "";
+
+    if (payments.length === 0) {
+
+      historyList.innerHTML = `
+        <tr>
+          <td colspan="4" class="empty">
+            এখনো কোনো বাকি আদায়ের রেকর্ড নেই।
+          </td>
+        </tr>
+      `;
+
+    } else {
+
+      payments.forEach(payment => {
+
+        const amount = Number(payment.amount || 0);
+        total += amount;
+
+        const customer = payment.customers || {};
+
+        const date = payment.created_at
+          ? new Date(payment.created_at).toLocaleString("bn-BD")
+          : "-";
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${date}</td>
+          <td>${customer.name || "-"}</td>
+          <td>${customer.phone || customer.mobile || "-"}</td>
+          <td>৳ ${amount.toFixed(2)}</td>
+        `;
+
+        historyList.appendChild(row);
+
+      });
+
+    }
+
+    document.getElementById("totalCollected").textContent =
+      "৳ " + total.toFixed(2);
+
+    document.getElementById("totalTransactions").textContent =
+      payments.length;
+
+  } catch (error) {
+
+    console.error(error);
+
+    historyList.innerHTML = `
+      <tr>
+        <td colspan="4" class="empty">
+          ❌ ${error.message}
+        </td>
+      </tr>
+    `;
+
+  }
+
+}
+
+loadDueHistory();
+
+</script>
+
+</body>
+</html>

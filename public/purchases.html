@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HisabAI - Purchases</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f7fb;
+    color: #1f2937;
+}
+
+.header {
+    background: #111827;
+    color: white;
+    padding: 20px 30px;
+}
+
+.header h2 {
+    color: #4ade80;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+h2 {
+    margin-bottom: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+}
+
+button {
+    background: #16a34a;
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 7px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-size: 15px;
+}
+
+button:hover {
+    background: #15803d;
+}
+
+.back {
+    background: #374151;
+    margin-left: 8px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+th {
+    background: #f3f4f6;
+}
+
+.message {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+@media (max-width: 700px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h2>📊 HisabAI</h2>
+    <p>ব্যবসার ক্রয় ব্যবস্থাপনা</p>
+</div>
+
+<div class="container">
+
+<div class="card">
+    <h2>🛒 নতুন ক্রয়</h2>
+
+    <div class="form-grid">
+
+        <div>
+            <label>মোট ক্রয় মূল্য</label>
+            <input type="number" id="totalAmount" value="0" min="0">
+        </div>
+
+        <div>
+            <label>পরিশোধ</label>
+            <input type="number" id="paidAmount" value="0" min="0">
+        </div>
+
+        <div>
+            <label>বাকি</label>
+            <input type="number" id="dueAmount" value="0" readonly>
+        </div>
+
+        <div>
+            <label>নোট</label>
+            <input type="text" id="notes" placeholder="প্রয়োজনে নোট লিখুন">
+        </div>
+
+    </div>
+
+    <button onclick="savePurchase()">+ ক্রয় যোগ করুন</button>
+    <button class="back" onclick="location.href='/'">← Dashboard</button>
+
+    <div id="message" class="message"></div>
+</div>
+
+<div class="card">
+    <h2>📋 ক্রয় ইতিহাস</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>তারিখ</th>
+                <th>মোট</th>
+                <th>পরিশোধ</th>
+                <th>বাকি</th>
+                <th>অবস্থা</th>
+            </tr>
+        </thead>
+
+        <tbody id="purchaseList"></tbody>
+    </table>
+</div>
+
+</div>
+
+<script>
+
+function updateDue() {
+    const total = Number(document.getElementById("totalAmount").value || 0);
+    const paid = Number(document.getElementById("paidAmount").value || 0);
+
+    document.getElementById("dueAmount").value =
+        Math.max(total - paid, 0);
+}
+
+document.getElementById("totalAmount").addEventListener("input", updateDue);
+document.getElementById("paidAmount").addEventListener("input", updateDue);
+
+
+async function loadPurchases() {
+
+    try {
+
+        const response = await fetch("/api/purchases");
+        const result = await response.json();
+
+        if (!result.success) return;
+
+        const tbody = document.getElementById("purchaseList");
+        tbody.innerHTML = "";
+
+        (result.data || []).forEach(purchase => {
+
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${new Date(purchase.purchase_date).toLocaleDateString()}</td>
+                <td>৳ ${Number(purchase.total_amount || 0).toFixed(2)}</td>
+                <td>৳ ${Number(purchase.paid_amount || 0).toFixed(2)}</td>
+                <td>৳ ${Number(purchase.due_amount || 0).toFixed(2)}</td>
+                <td>${purchase.payment_status || "-"}</td>
+<td>
+  ${Number(purchase.due_amount || 0) > 0
+    ? `<button onclick="payPurchaseDue('${purchase.id}', ${Number(purchase.due_amount || 0)})">বাকি পরিশোধ</button>`
+    : "পরিশোধ সম্পূর্ণ"}
+</td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function payPurchaseDue(purchaseId, currentDue) {
+  const input = prompt("কত টাকা বাকি পরিশোধ করবেন?", currentDue);
+
+  if (input === null) return;
+
+  const amount = Number(input);
+
+  if (amount <= 0 || amount > currentDue) {
+    alert("সঠিক টাকার পরিমাণ দিন");
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/purchases/${purchaseId}/pay-due`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ amount: amount })
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      alert(result.error || "বাকি পরিশোধ করা যায়নি");
+      return;
+    }
+
+    alert("বাকি সফলভাবে পরিশোধ হয়েছে");
+    await loadPurchases();
+
+  } catch (error) {
+    alert("Server connection error");
+  }
+}
+async function savePurchase() {
+
+    const total = Number(document.getElementById("totalAmount").value || 0);
+    const paid = Number(document.getElementById("paidAmount").value || 0);
+    const notes = document.getElementById("notes").value;
+
+    if (total <= 0) {
+        document.getElementById("message").textContent =
+            "❌ মোট ক্রয় মূল্য লিখুন।";
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/api/purchases", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                total_amount: total,
+                paid_amount: paid,
+                notes: notes
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            document.getElementById("message").textContent =
+                "❌ " + (result.error || "ক্রয় সংরক্ষণ করা যায়নি");
+            return;
+        }
+
+        document.getElementById("message").textContent =
+            "✅ ক্রয় সফলভাবে সংরক্ষণ হয়েছে।";
+
+        document.getElementById("totalAmount").value = 0;
+        document.getElementById("paidAmount").value = 0;
+        document.getElementById("dueAmount").value = 0;
+        document.getElementById("notes").value = "";
+
+        await loadPurchases();
+
+    } catch (error) {
+
+        document.getElementById("message").textContent =
+            "❌ Server connection error";
+    }
+}
+
+loadPurchases();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HisabAI - Suppliers</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#f4f7fb;
+  color:#1f2937;
+}
+
+.header{
+  background:#111827;
+  color:white;
+  padding:20px 30px;
+}
+
+.header h2{
+  color:#4ade80;
+}
+
+.container{
+  max-width:1100px;
+  margin:30px auto;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:25px;
+  border-radius:12px;
+  margin-bottom:25px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px;
+}
+
+label{
+  display:block;
+  margin-bottom:6px;
+  font-weight:bold;
+}
+
+input{
+  width:100%;
+  padding:11px;
+  border:1px solid #d1d5db;
+  border-radius:7px;
+}
+
+button{
+  background:#16a34a;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:7px;
+  cursor:pointer;
+  margin-top:20px;
+}
+
+.back{
+  background:#374151;
+  margin-left:8px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+
+th,td{
+  padding:12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+}
+
+th{
+  background:#f3f4f6;
+}
+
+.message{
+  margin-top:15px;
+  font-weight:bold;
+}
+
+@media(max-width:700px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>📊 HisabAI</h2>
+  <p>Supplier Management</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <h2>🏭 নতুন Supplier</h2>
+
+    <div class="form-grid">
+      <div>
+        <label>Supplier নাম</label>
+        <input type="text" id="supplierName" placeholder="নাম লিখুন">
+      </div>
+
+      <div>
+        <label>মোবাইল নম্বর</label>
+        <input type="text" id="supplierPhone" placeholder="01XXXXXXXXX">
+      </div>
+
+      <div>
+        <label>ঠিকানা</label>
+        <input type="text" id="supplierAddress" placeholder="ঠিকানা লিখুন">
+      </div>
+
+      <div>
+        <label>শুরুর বাকি</label>
+        <input type="number" id="openingDue" value="0" min="0">
+      </div>
+    </div>
+
+    <button onclick="saveSupplier()">+ Supplier যোগ করুন</button>
+    <button class="back" onclick="location.href='/'">← Dashboard</button>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <div class="card">
+    <h2>📋 Supplier তালিকা</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>নাম</th>
+          <th>মোবাইল</th>
+          <th>ঠিকানা</th>
+          <th>শুরুর বাকি</th>
+        </tr>
+      </thead>
+
+      <tbody id="supplierList">
+        <tr>
+          <td colspan="4">লোড হচ্ছে...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+
+async function loadSuppliers(){
+  try{
+    const response = await fetch("/api/suppliers");
+    const result = await response.json();
+
+    const tbody = document.getElementById("supplierList");
+    tbody.innerHTML = "";
+
+    if(!result.success){
+      tbody.innerHTML = `<tr><td colspan="4">তথ্য লোড করা যায়নি</td></tr>`;
+      return;
+    }
+
+    const suppliers = result.data || [];
+
+    if(suppliers.length === 0){
+      tbody.innerHTML = `<tr><td colspan="4">এখনো কোনো Supplier নেই</td></tr>`;
+      return;
+    }
+
+    suppliers.forEach(supplier=>{
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${supplier.name || "-"}</td>
+        <td>${supplier.phone || "-"}</td>
+        <td>${supplier.address || "-"}</td>
+        <td>৳ ${Number(supplier.opening_due || 0).toFixed(2)}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+  }catch(error){
+    console.error(error);
+  }
+}
+
+
+async function saveSupplier(){
+
+  const name = document.getElementById("supplierName").value.trim();
+  const phone = document.getElementById("supplierPhone").value.trim();
+  const address = document.getElementById("supplierAddress").value.trim();
+  const openingDue = Number(document.getElementById("openingDue").value || 0);
+
+  if(!name){
+    document.getElementById("message").textContent =
+      "❌ Supplier-এর নাম লিখুন";
+    return;
+  }
+
+  try{
+
+    const response = await fetch("/api/suppliers",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        name:name,
+        phone:phone,
+        address:address,
+        opening_due:openingDue
+      })
+    });
+
+    const result = await response.json();
+
+    if(!result.success){
+      document.getElementById("message").textContent =
+        "❌ " + (result.error || "Supplier সংরক্ষণ করা যায়নি");
+      return;
+    }
+
+    document.getElementById("message").textContent =
+      "✅ Supplier সফলভাবে সংরক্ষণ হয়েছে";
+
+    document.getElementById("supplierName").value = "";
+    document.getElementById("supplierPhone").value = "";
+    document.getElementById("supplierAddress").value = "";
+    document.getElementById("openingDue").value = 0;
+
+    await loadSuppliers();
+
+  }catch(error){
+    document.getElementById("message").textContent =
+      "❌ Server connection error";
+  }
+}
+
+loadSuppliers();
+
+</script>
+
+</body>
+</html>

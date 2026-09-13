@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HisabAI - Products</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+    }
+
+    .header {
+      background: #111827;
+      color: white;
+      padding: 20px 30px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 10px #ddd;
+    }
+
+    input {
+      padding: 12px;
+      margin: 6px;
+      width: 200px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background: #f3f4f6;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>📦 HisabAI Products</h2>
+</div>
+
+<div class="container">
+
+  <div class="card">
+
+    <h3>নতুন পণ্য যোগ করুন</h3>
+
+    <input id="name" placeholder="পণ্যের নাম">
+
+    <input id="sku" placeholder="SKU">
+
+    <input id="category" placeholder="ক্যাটাগরি">
+
+    <input id="unit" placeholder="ইউনিট">
+
+    <input id="purchase_price"
+           type="number"
+           placeholder="ক্রয় মূল্য">
+
+    <input id="selling_price"
+           type="number"
+           placeholder="বিক্রয় মূল্য">
+
+    <input id="stock_quantity"
+           type="number"
+           placeholder="স্টক">
+
+    <br><br>
+
+    <button onclick="addProduct()">
+      + পণ্য যোগ করুন
+    </button>
+
+    <p id="message"></p>
+
+  </div>
+
+  <div class="card">
+
+    <h3>পণ্যের তালিকা</h3>
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>নাম</th>
+          <th>SKU</th>
+          <th>ক্যাটাগরি</th>
+          <th>ক্রয় মূল্য</th>
+          <th>বিক্রয় মূল্য</th>
+          <th>স্টক</th>
+        </tr>
+      </thead>
+
+      <tbody id="productList"></tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+<script>
+let businessId = null;
+
+async function getBusinessId() {
+  const response = await fetch("/businesses");
+  const result = await response.json();
+
+  if (!result.success || !result.data || result.data.length === 0) {
+    throw new Error("Business পাওয়া যায়নি");
+  }
+
+  businessId = result.data[0].id;
+  return businessId;
+}
+
+async function loadProducts() {
+  try {
+    const response = await fetch("/api/products");
+    const result = await response.json();
+
+    const list = document.getElementById("productList");
+    list.innerHTML = "";
+
+    if (!result.success) return;
+
+    result.data.forEach(product => {
+      list.innerHTML += `
+        <tr>
+          <td>${product.name ?? ""}</td>
+          <td>${product.sku ?? ""}</td>
+          <td>${product.category ?? ""}</td>
+          <td>৳ ${product.purchase_price ?? 0}</td>
+          <td>৳ ${product.selling_price ?? 0}</td>
+          <td>${product.stock_quantity ?? 0}</td>
+        </tr>
+      `;
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function addProduct() {
+  const message = document.getElementById("message");
+
+  try {
+    if (!businessId) {
+      await getBusinessId();
+    }
+
+    const product = {
+      business_id: businessId,
+      name: document.getElementById("name").value.trim(),
+      sku: document.getElementById("sku").value.trim(),
+      category: document.getElementById("category").value.trim(),
+      unit: document.getElementById("unit").value.trim() || "pcs",
+      purchase_price: Number(
+        document.getElementById("purchase_price").value || 0
+      ),
+      selling_price: Number(
+        document.getElementById("selling_price").value || 0
+      ),
+      stock_quantity: Number(
+        document.getElementById("stock_quantity").value || 0
+      )
+    };
+
+    if (!product.name) {
+      message.innerText = "❌ পণ্যের নাম লিখুন";
+      return;
+    }
+
+    const response = await fetch("/api/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(product)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      message.innerText = "✅ পণ্য সফলভাবে যোগ হয়েছে";
+      await loadProducts();
+    } else {
+      message.innerText = "❌ " + result.error;
+    }
+  } catch (error) {
+    message.innerText = "❌ " + error.message;
+    console.error(error);
+  }
+}
+
+getBusinessId()
+  .then(loadProducts)
+  .catch(console.error);
+</script>
+
+</body>
+</html>

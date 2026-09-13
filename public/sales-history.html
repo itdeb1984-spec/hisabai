@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>বিক্রয় ইতিহাস - HisabAI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7f6;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 16px;
+      background: #009879;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .card small {
+      color: #666;
+    }
+
+    .card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 22px;
+    }
+
+    .table-box {
+      background: white;
+      border-radius: 10px;
+      overflow-x: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 850px;
+    }
+
+    th, td {
+      padding: 13px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #009879;
+      color: white;
+    }
+
+    tr:hover {
+      background: #f7f7f7;
+    }
+
+    .paid {
+      color: green;
+      font-weight: bold;
+    }
+
+    .due {
+      color: #d9534f;
+      font-weight: bold;
+    }
+
+    .loading,
+    .empty,
+    .error {
+      text-align: center;
+      padding: 35px;
+    }
+
+    .error {
+      color: #c62828;
+    }
+
+    .items {
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 700px) {
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        margin: 10px auto;
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="topbar">
+    <h1>📊 বিক্রয় ইতিহাস</h1>
+
+    <div>
+      <a href="sales.html" class="btn">➕ নতুন বিক্রয়</a>
+      <a href="index.html" class="btn">🏠 হোম</a>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="card">
+      <small>মোট বিক্রয়</small>
+      <strong id="totalSales">৳ 0</strong>
+    </div>
+
+    <div class="card">
+      <small>মোট পরিশোধ</small>
+      <strong id="totalPaid">৳ 0</strong>
+    </div>
+
+    <div class="card">
+      <small>মোট বাকি</small>
+      <strong id="totalDue">৳ 0</strong>
+    </div>
+  </div>
+
+  <div class="table-box">
+
+    <div id="message" class="loading">
+      বিক্রয়ের তথ্য লোড হচ্ছে...
+    </div>
+
+    <table id="salesTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>তারিখ</th>
+          <th>ইনভয়েস</th>
+          <th>পণ্য</th>
+          <th>মোট</th>
+          <th>পরিশোধ</th>
+          <th>বাকি</th>
+          <th>স্ট্যাটাস</th>
+        </tr>
+      </thead>
+
+      <tbody id="salesBody"></tbody>
+    </table>
+
+  </div>
+
+</div>
+
+<script>
+
+function money(value) {
+  return "৳ " + Number(value || 0).toFixed(2);
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("bn-BD");
+}
+
+function itemNames(items) {
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return "-";
+  }
+
+  return items.map(item => {
+
+    const name =
+      item.product_name ||
+      item.product ||
+      "পণ্য";
+
+    const quantity =
+      item.quantity || 1;
+
+    return `${name} × ${quantity}`;
+
+  }).join("<br>");
+
+}
+
+async function loadSalesHistory() {
+
+  const message = document.getElementById("message");
+  const table = document.getElementById("salesTable");
+  const tbody = document.getElementById("salesBody");
+
+  try {
+
+    const response = await fetch("/api/sales-history");
+
+    const result = await response.json();
+
+    if (!response.ok || result.success === false) {
+      throw new Error(result.error || "বিক্রয়ের তথ্য পাওয়া যায়নি");
+    }
+
+    const sales = Array.isArray(result.data)
+      ? result.data
+      : [];
+
+    if (sales.length === 0) {
+
+      message.className = "empty";
+      message.textContent = "এখনো কোনো বিক্রয় পাওয়া যায়নি।";
+
+      return;
+    }
+
+    let totalSales = 0;
+    let totalPaid = 0;
+    let totalDue = 0;
+
+    tbody.innerHTML = "";
+
+    sales.forEach(sale => {
+
+      const amount = Number(sale.total_amount || 0);
+      const paid = Number(sale.paid_amount || 0);
+      const due = Number(sale.due_amount || 0);
+
+      totalSales += amount;
+      totalPaid += paid;
+      totalDue += due;
+
+      const row = document.createElement("tr");
+
+        const status =
+    sale.payment_status === "paid"
+        ? "পরিশোধিত"
+        : sale.payment_status === "partial"
+        ? "আংশিক পরিশোধ"
+        : sale.payment_status === "unpaid"
+        ? "বাকি"
+        : "অজানা";
+      row.innerHTML = `
+        <td>${formatDate(sale.sale_date)}</td>
+
+        <td>
+          ${sale.invoice_no || "-"}
+        </td>
+
+        <td class="items">
+          ${itemNames(sale.items)}
+        </td>
+
+        <td>
+          ${money(amount)}
+        </td>
+
+        <td>
+          ${money(paid)}
+        </td>
+
+        <td class="${due > 0 ? "due" : ""}">
+          ${money(due)}
+        </td>
+
+        <td class="${status === "paid" ? "paid" : "due"}">
+          ${status === "paid" ? "পরিশোধিত" : status}
+        </td>
+
+<td>
+  ${due > 0
+    ? `<button onclick="collectDue('${sale.id}', ${due})">বাকি আদায়</button>`
+    : `—`
+  }
+</td>
+`;
+     
+      tbody.appendChild(row);
+
+    });
+
+    document.getElementById("totalSales").textContent =
+      money(totalSales);
+
+    document.getElementById("totalPaid").textContent =
+      money(totalPaid);
+
+    document.getElementById("totalDue").textContent =
+      money(totalDue);
+
+    message.style.display = "none";
+    table.style.display = "table";
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    message.className = "error";
+
+    message.textContent =
+      "❌ বিক্রয়ের ইতিহাস লোড করা যায়নি: " +
+      error.message;
+
+  }
+
+}
+
+async function collectDue(saleId, currentDue) {
+  const amount = prompt(
+    "কত টাকা বাকি আদায় হয়েছে? বর্তমান বাকি: ৳" + currentDue
+  );
+
+  if (amount === null) return;
+
+  const paidAmount = Number(amount);
+
+  if (!paidAmount || paidAmount <= 0 || paidAmount > currentDue) {
+    alert("সঠিক টাকার পরিমাণ লিখুন");
+    return;
+  }
+
+  const response = await fetch(`/api/sales/${saleId}/collect-due`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    amount: paidAmount
+  })
+});
+
+const result = await response.json();
+
+if (!response.ok || !result.success) {
+  alert(result.error || "বাকি আদায় সংরক্ষণ করা যায়নি");
+  return;
+}
+
+alert("বাকি আদায় সফল হয়েছে");
+
+await loadSalesHistory();
+}
+loadSalesHistory();
+
+</script>
+
+</body>
+</html>

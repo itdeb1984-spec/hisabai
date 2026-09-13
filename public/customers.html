@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ক্রেতা ও বাকি হিসাব - HisabAI</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 20px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .btn {
+      background: #0aa36c;
+      color: white;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #666;
+    }
+
+    .card strong {
+      font-size: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+
+    th {
+      background: #0aa36c;
+      color: white;
+    }
+
+    .due {
+      color: #d93025;
+      font-weight: bold;
+    }
+
+    .loading {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 10px;
+      }
+
+      table {
+        font-size: 13px;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="topbar">
+      <h1>👥 ক্রেতা ও বাকি হিসাব</h1>
+
+      <div>
+        <a class="btn" href="/sales.html">+ নতুন বিক্রয়</a>
+        <a class="btn" href="/index.html">🏠 হোম</a>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="card">
+        <h3>মোট ক্রেতা</h3>
+        <strong id="totalCustomers">0</strong>
+      </div>
+
+      <div class="card">
+        <h3>মোট বিক্রয়</h3>
+        <strong id="totalSales">৳0</strong>
+      </div>
+
+      <div class="card">
+        <h3>মোট পরিশোধ</h3>
+        <strong id="totalPaid">৳0</strong>
+      </div>
+
+      <div class="card">
+        <h3>মোট বাকি</h3>
+        <strong id="totalDue">৳0</strong>
+      </div>
+    </div>
+
+    <div id="message" class="loading">
+      ক্রেতার হিসাব লোড হচ্ছে...
+    </div>
+
+    <table id="customerTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>ক্রেতার নাম</th>
+          <th>মোবাইল</th>
+          <th>মোট কেনাকাটা</th>
+          <th>মোট পরিশোধ</th>
+          <th>মোট বাকি</th>
+        </tr>
+      </thead>
+
+      <tbody id="customerList"></tbody>
+    </table>
+
+  </div>
+
+<script>
+function money(value) {
+  return "৳ " + Number(value || 0).toFixed(2);
+}
+
+async function loadCustomers() {
+  const message = document.getElementById("message");
+  const table = document.getElementById("customerTable");
+  const tbody = document.getElementById("customerList");
+
+  try {
+    const response = await fetch("/api/customers-summary");
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "ক্রেতার হিসাব লোড করা যায়নি");
+    }
+
+    const customers = result.data || [];
+
+    tbody.innerHTML = "";
+
+    let totalSales = 0;
+    let totalPaid = 0;
+    let totalDue = 0;
+
+    customers.forEach(customer => {
+      totalSales += Number(customer.total_sales || 0);
+      totalPaid += Number(customer.total_paid || 0);
+      totalDue += Number(customer.total_due || 0);
+
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${customer.name || "-"}</td>
+        <td>${customer.phone || "-"}</td>
+        <td>${money(customer.total_sales)}</td>
+        <td>${money(customer.total_paid)}</td>
+        <td class="${Number(customer.total_due) > 0 ? "due" : ""}">
+          ${money(customer.total_due)}
+        </td>
+<td><button onclick="collectDue('${customer.id}', ${Number(customer.total_due || 0)})">💰 বাকি আদায়</button></td>
+      `;
+
+      tbody.appendChild(row);
+    });
+
+    document.getElementById("totalCustomers").textContent = customers.length;
+    document.getElementById("totalSales").textContent = money(totalSales);
+    document.getElementById("totalPaid").textContent = money(totalPaid);
+    document.getElementById("totalDue").textContent = money(totalDue);
+
+    message.style.display = "none";
+    table.style.display = "table";
+
+  } catch (error) {
+    message.textContent = "❌ " + error.message;
+  }
+}
+
+async function collectDue(customerId, currentDue) {
+  const amount = prompt(
+    "কত টাকা বাকি আদায় হয়েছে? বর্তমান বাকি: ৳" + currentDue
+  );
+
+  if (amount === null) return;
+
+  const paidAmount = Number(amount);
+
+  if (!paidAmount || paidAmount <= 0 || paidAmount > currentDue) {
+    alert("সঠিক টাকার পরিমাণ লিখুন");
+    return;
+  }
+
+  const response = await fetch(`/api/customers/${customerId}/collect-due`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      amount: paidAmount
+    })
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    alert(result.error || "বাকি আদায় সংরক্ষণ করা যায়নি");
+    return;
+  }
+
+  alert("বাকি আদায় সফল হয়েছে");
+
+  await loadCustomers();
+}
+loadCustomers();
+</script>
+
+</body>
+</html>

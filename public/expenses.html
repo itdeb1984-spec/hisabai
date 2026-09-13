@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HisabAI - Expenses</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#f4f7fb;
+  color:#1f2937;
+}
+
+.header{
+  background:#111827;
+  color:white;
+  padding:20px 30px;
+}
+
+.header h2{
+  color:#4ade80;
+}
+
+.container{
+  max-width:1100px;
+  margin:30px auto;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:25px;
+  border-radius:12px;
+  margin-bottom:25px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px;
+}
+
+label{
+  display:block;
+  margin-bottom:6px;
+  font-weight:bold;
+}
+
+input, select{
+  width:100%;
+  padding:11px;
+  border:1px solid #d1d5db;
+  border-radius:7px;
+}
+
+button{
+  background:#dc2626;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:7px;
+  cursor:pointer;
+  margin-top:20px;
+}
+
+.back{
+  background:#374151;
+  margin-left:8px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+
+th,td{
+  padding:12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+}
+
+th{
+  background:#f3f4f6;
+}
+
+.message{
+  margin-top:15px;
+  font-weight:bold;
+}
+
+@media(max-width:700px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>📊 HisabAI</h2>
+  <p>Expense Management</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <h2>💸 নতুন খরচ</h2>
+
+    <div class="form-grid">
+
+      <div>
+        <label>খরচের ধরন</label>
+        <select id="expenseCategory">
+          <option value="">নির্বাচন করুন</option>
+          <option value="Electricity">বিদ্যুৎ</option>
+          <option value="Transport">পরিবহন</option>
+          <option value="Salary">বেতন</option>
+          <option value="Rent">ভাড়া</option>
+          <option value="Food">খাবার</option>
+          <option value="Maintenance">মেরামত</option>
+          <option value="Other">অন্যান্য</option>
+        </select>
+      </div>
+
+      <div>
+        <label>টাকার পরিমাণ</label>
+        <input type="number" id="expenseAmount" value="0" min="0">
+      </div>
+
+      <div>
+        <label>তারিখ</label>
+        <input type="date" id="expenseDate">
+      </div>
+
+      <div>
+        <label>বিবরণ</label>
+        <input type="text" id="expenseNote" placeholder="খরচের বিস্তারিত লিখুন">
+      </div>
+
+    </div>
+
+    <button onclick="saveExpense()">+ খরচ যোগ করুন</button>
+    <button class="back" onclick="location.href='/'">← Dashboard</button>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <div class="card">
+    <h2>📋 খরচের তালিকা</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>তারিখ</th>
+          <th>ধরন</th>
+          <th>বিবরণ</th>
+          <th>টাকা</th>
+        </tr>
+      </thead>
+
+      <tbody id="expenseList">
+        <tr>
+          <td colspan="4">লোড হচ্ছে...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+
+const localDate = new Date();
+localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+
+document.getElementById("expenseDate").value =
+  localDate.toISOString().split("T")[0];
+async function loadExpenses(){
+  try{
+    const response = await fetch("/api/expenses");
+    const result = await response.json();
+
+    const tbody = document.getElementById("expenseList");
+    tbody.innerHTML = "";
+
+    if(!result.success){
+      tbody.innerHTML =
+        `<tr><td colspan="4">তথ্য লোড করা যায়নি</td></tr>`;
+      return;
+    }
+
+    const expenses = result.data || [];
+
+    if(expenses.length === 0){
+      tbody.innerHTML =
+        `<tr><td colspan="4">এখনো কোনো খরচ নেই</td></tr>`;
+      return;
+    }
+
+    expenses.forEach(expense => {
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${expense.expense_date || "-"}</td>
+        <td>${expense.category || "-"}</td>
+        <td>${expense.notes || "-"}</td>
+        <td>৳ ${Number(expense.amount || 0).toFixed(2)}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+  }catch(error){
+    console.error(error);
+  }
+}
+
+
+async function saveExpense(){
+
+  const category =
+    document.getElementById("expenseCategory").value;
+
+  const amount =
+    Number(document.getElementById("expenseAmount").value || 0);
+
+  const expenseDate =
+    document.getElementById("expenseDate").value;
+
+  const notes =
+    document.getElementById("expenseNote").value.trim();
+
+  if(!category){
+    document.getElementById("message").textContent =
+      "❌ খরচের ধরন নির্বাচন করুন";
+    return;
+  }
+
+  if(amount <= 0){
+    document.getElementById("message").textContent =
+      "❌ টাকার পরিমাণ সঠিকভাবে দিন";
+    return;
+  }
+
+  try{
+
+    const response = await fetch("/api/expenses",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        category:category,
+        amount:amount,
+        expense_date:expenseDate,
+        notes:notes
+      })
+    });
+
+    const result = await response.json();
+
+    if(!result.success){
+      document.getElementById("message").textContent =
+        "❌ " + (result.error || "খরচ সংরক্ষণ করা যায়নি");
+      return;
+    }
+
+    document.getElementById("message").textContent =
+      "✅ খরচ সফলভাবে সংরক্ষণ হয়েছে";
+
+    document.getElementById("expenseCategory").value = "";
+    document.getElementById("expenseAmount").value = 0;
+    document.getElementById("expenseNote").value = "";
+
+    await loadExpenses();
+
+  }catch(error){
+
+    document.getElementById("message").textContent =
+      "❌ Server connection error";
+  }
+}
+
+loadExpenses();
+
+</script>
+
+</body>
+</html>
