@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - HisabAI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f4f7fb;
+    }
+
+    .login-box {
+      width: 390px;
+      max-width: 92%;
+      background: white;
+      padding: 35px;
+      border-radius: 16px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.10);
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 30px;
+      font-weight: bold;
+      color: #10b981;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      margin-bottom: 18px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #10b981;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #059669;
+    }
+
+    .bottom-text {
+      text-align: center;
+      margin-top: 20px;
+      color: #64748b;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-box">
+
+    <div class="logo">📊 HisabAI</div>
+
+    <div class="subtitle">
+      আপনার ব্যবসার স্মার্ট হিসাব
+    </div>
+
+    <label>মোবাইল নম্বর / ইমেইল</label>
+    <input
+      type="text"
+      id="loginId"
+      placeholder="আপনার মোবাইল নম্বর বা ইমেইল দিন"
+    >
+
+    <label>পাসওয়ার্ড</label>
+    <input
+      type="password"
+      id="password"
+      placeholder="পাসওয়ার্ড লিখুন"
+    >
+
+    <button type="button">
+      লগইন করুন
+    </button>
+
+    <div class="bottom-text">
+      নতুন ব্যবহারকারী? অ্যাকাউন্ট তৈরি করুন
+    </div>
+
+  </div>
+
+</body>
+</html>
