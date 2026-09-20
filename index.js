@@ -42,12 +42,21 @@ app.get("/businesses", async (req, res) => {
 
 // Get all products
 app.get("/api/products", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+        const business_id = req.query.business_id;
 
+        if (!business_id) {
+            return res.status(400).json({
+                success: false,
+                error: "business_id is required"
+            });
+        }
+
+        const { data, error } = await supabase
+            .from("products")
+            .select("*")
+            .eq("business_id", business_id)
+            .order("created_at", { ascending: false });
     if (error) {
       return res.status(500).json({
         success: false,
@@ -337,6 +346,7 @@ app.get("/api/sales-history", async (req, res) => {
         product_name,
         quantity,
         unit_price,
+        cost_price,
         line_total
       `);
 
@@ -1031,6 +1041,134 @@ app.post("/api/purchases/:id/pay-due", async (req, res) => {
     console.error("PURCHASE DUE PAYMENT ERROR:", error);
 
     res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ==============================
+// REGISTER NEW BUSINESS ACCOUNT
+// ==============================
+app.post("/api/register", async (req, res) => {
+  try {
+    const {
+      businessName,
+      ownerName,
+      phone,
+      email,
+      password
+    } = req.body;
+
+    if (!businessName || !ownerName || !phone || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "সব তথ্য পূরণ করুন"
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে"
+      });
+    }
+
+    // 1. Supabase Auth user তৈরি
+    const { data: authData, error: authError } =
+      await supabase.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          name: ownerName,
+          phone: phone
+        }
+      });
+
+    if (authError) throw authError;
+
+    const userId = authData.user.id;
+
+    // 2. নতুন Business তৈরি
+    const { data: business, error: businessError } =
+      await supabase
+        .from("businesses")
+        .insert({
+    name: businessName,
+    owner_id: userId
+})
+        .select()
+        .single();
+
+    if (businessError) throw businessError;
+
+    // 3. User-কে Business-এর owner বানানো
+    const { error: memberError } =
+      await supabase
+        .from("business_members")
+        .insert({
+          business_id: business.id,
+          user_id: userId,
+          role: "owner"
+        });
+
+    if (memberError) throw memberError;
+
+    res.json({
+      success: true,
+      message: "অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে",
+      business_id: business.id
+    });
+
+  } catch (error) {
+    console.error("REGISTER ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ===============================
+// LOGIN
+// ===============================
+app.post("/api/login", async (req, res) => {
+  try {
+    const { loginId, password } = req.body;
+
+    if (!loginId || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "ইমেইল এবং পাসওয়ার্ড দিন"
+      });
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginId,
+      password: password
+    });
+
+    if (error) throw error;
+const { data: member, error: memberError } = await supabase
+  .from("business_members")
+  .select("business_id")
+  .eq("user_id", data.user.id)
+  .limit(1)
+  .maybeSingle();
+
+if (memberError) throw memberError;
+    res.json({
+  success: true,
+  user: data.user,
+  business_id: member ? member.business_id : null
+});
+
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+
+    res.status(401).json({
       success: false,
       error: error.message
     });

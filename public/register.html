@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HisabAI - নতুন অ্যাকাউন্ট</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f4f7fb;
+      padding: 20px;
+    }
+
+    .register-box {
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 30px;
+      font-weight: bold;
+      color: #00a86b;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #00a86b;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 22px;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #00a86b;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #008f5b;
+    }
+
+    .bottom-text {
+      text-align: center;
+      margin-top: 20px;
+      color: #64748b;
+    }
+
+    .bottom-text a {
+      color: #00a86b;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="register-box">
+
+    <div class="logo">📊 HisabAI</div>
+
+    <div class="subtitle">
+      আপনার ব্যবসার হিসাব শুরু করুন
+    </div>
+
+    <form id="registerForm">
+
+      <label>ব্যবসার নাম</label>
+      <input
+        type="text"
+        id="businessName"
+        placeholder="আপনার দোকান বা ব্যবসার নাম"
+        required
+      >
+
+      <label>আপনার নাম</label>
+      <input
+        type="text"
+        id="ownerName"
+        placeholder="আপনার নাম লিখুন"
+        required
+      >
+
+      <label>মোবাইল নম্বর</label>
+      <input
+        type="tel"
+        id="phone"
+        placeholder="01XXXXXXXXX"
+        required
+      >
+
+      <label>ইমেইল</label>
+      <input
+        type="email"
+        id="email"
+        placeholder="আপনার ইমেইল লিখুন"
+        required
+      >
+
+      <label>পাসওয়ার্ড</label>
+      <input
+        type="password"
+        id="password"
+        placeholder="কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড"
+        minlength="6"
+        required
+      >
+
+      <label>পাসওয়ার্ড নিশ্চিত করুন</label>
+      <input
+        type="password"
+        id="confirmPassword"
+        placeholder="আবার পাসওয়ার্ড লিখুন"
+        minlength="6"
+        required
+      >
+
+      <button type="submit">
+        অ্যাকাউন্ট তৈরি করুন
+      </button>
+
+    </form>
+
+    <div class="bottom-text">
+      ইতিমধ্যে অ্যাকাউন্ট আছে?
+      <a href="login.html">লগইন করুন</a>
+    </div>
+
+  </div>
+
+ <script>
+document.getElementById("registerForm").addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const businessName = document.getElementById("businessName").value.trim();
+  const ownerName = document.getElementById("ownerName").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+
+  if (password !== confirmPassword) {
+    alert("দুইটি পাসওয়ার্ড মিলছে না");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        businessName,
+        ownerName,
+        phone,
+        email,
+        password
+      })
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      alert("অ্যাকাউন্ট তৈরি হয়নি: " + result.error);
+      return;
+    }
+
+    alert("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। এখন লগইন করুন।");
+    window.location.href = "login.html";
+
+  } catch (error) {
+    alert("Server connection error");
+    console.error(error);
+  }
+});
+</script>
+
+</body>
+</html>

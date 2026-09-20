@@ -173,7 +173,8 @@ async function loadProducts() {
 
   try {
 
-    const response = await fetch("/api/products");
+    const loggedUser = JSON.parse(localStorage.getItem("hisabai_user"));
+    const response = await fetch("/api/products?business_id=" + loggedUser.business_id);
     const result = await response.json();
 
     products = Array.isArray(result)

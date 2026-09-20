@@ -116,6 +116,47 @@
     </div>
 
   </div>
+<script>
+document.querySelector('button').addEventListener('click', async function () {
+    const loginId = document.getElementById('loginId').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!loginId || !password) {
+        alert('মোবাইল নম্বর / ইমেইল এবং পাসওয়ার্ড দিন');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                loginId: loginId,
+                password: password
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            alert('লগইন হয়নি: ' + result.error);
+            return;
+        }
+
+       localStorage.setItem("hisabai_user", JSON.stringify({
+  ...result.user,
+  business_id: result.business_id
+}));
+        window.location.href = '/index.html';
+
+    } catch (error) {
+        console.error(error);
+        alert('Server connection error');
+    }
+});
+</script>
 
 </body>
 </html>

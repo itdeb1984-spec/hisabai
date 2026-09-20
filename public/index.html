@@ -163,9 +163,10 @@
     </div>
 
     <div class="business">
-      🏪 HisabAI Demo Shop
+      🏪 <span id="businessName">লোড হচ্ছে...</span>
     </div>
-  </div>
+   <button onclick="logoutUser()">🚪 Logout</button>
+   </div>
   <div class="cards">
 
   <div class="card">
@@ -214,6 +215,33 @@
 </div>
 
 <script>
+const loggedUser = JSON.parse(localStorage.getItem("hisabai_user"));
+
+if (!loggedUser) {
+  window.location.href = "/login.html";
+}
+
+function logoutUser() {
+    localStorage.removeItem("hisabai_user");
+    window.location.href = "/login.html";
+}
+
+async function loadBusinessName() {
+  try {
+    const response = await fetch("/businesses");
+    const result = await response.json();
+    const businesses = result.data || [];
+    const myBusiness = businesses.find(b => b.id === loggedUser.business_id);
+    if (myBusiness) {
+  document.getElementById("businessName").textContent =
+    myBusiness.name;
+}
+  } catch (error) {
+    console.error("Business name error:", error);
+  }
+}
+
+loadBusinessName();
 async function loadDashboard() {
   try {
     const response = await fetch('/api/sales-history');
@@ -235,6 +263,21 @@ async function loadDashboard() {
 
     document.getElementById("todaySales").textContent =
       "৳ " + todaySales.toFixed(2);
+const todayCost = sales
+  .filter(sale => {
+    const d = new Date(sale.sale_date);
+    return d.getFullYear() === today.getFullYear() &&
+           d.getMonth() === today.getMonth() &&
+           d.getDate() === today.getDate();
+  })
+  .reduce((sum, sale) => {
+    const saleCost = (sale.items || []).reduce(
+      (itemSum, item) =>
+        itemSum + Number(item.cost_price || 0) * Number(item.quantity || 0),
+      0
+    );
+    return sum + saleCost;
+  }, 0);
 const purchaseResponse = await fetch("/api/purchases");
 const purchaseResult = await purchaseResponse.json();
 
@@ -277,8 +320,7 @@ if (expenseResult.success) {
     "৳ " + todayExpenses.toFixed(2);
 }
 
-const todayProfit =
-  todaySales - todayPurchases - todayExpenses;
+const todayProfit = todaySales - todayCost - todayExpenses;
 
 document.getElementById("todayProfit").textContent =
   "৳ " + todayProfit.toFixed(2); } catch (error) {

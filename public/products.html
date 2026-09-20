@@ -137,20 +137,21 @@
 let businessId = null;
 
 async function getBusinessId() {
-  const response = await fetch("/businesses");
-  const result = await response.json();
+  const loggedUser = JSON.parse(localStorage.getItem("hisabai_user"));
 
-  if (!result.success || !result.data || result.data.length === 0) {
-    throw new Error("Business পাওয়া যায়নি");
+  if (!loggedUser || !loggedUser.business_id) {
+    window.location.href = "/login.html";
+    return null;
   }
 
-  businessId = result.data[0].id;
+  businessId = loggedUser.business_id;
   return businessId;
 }
 
+
 async function loadProducts() {
   try {
-    const response = await fetch("/api/products");
+    const response = await fetch("/api/products?business_id=" + businessId);
     const result = await response.json();
 
     const list = document.getElementById("productList");
